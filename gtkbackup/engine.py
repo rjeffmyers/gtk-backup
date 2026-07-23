@@ -7,6 +7,8 @@ touched by the GTK app.
 
 from __future__ import annotations
 
+import fcntl
+import os
 import subprocess
 import time
 from dataclasses import dataclass
@@ -15,6 +17,42 @@ from pathlib import Path
 
 from . import config, db, rsync
 from .devices import Device
+
+
+class AlreadyRunning(Exception):
+    """Another gtk-backup process already holds the run lock."""
+
+
+def _lock_file() -> Path:
+    return config.state_dir() / "backup.lock"
+
+
+def acquire_lock():
+    """Take an exclusive, non-blocking lock shared by GUI and timer.
+
+    Returns an open file handle that must be kept alive for the duration of
+    the run (the lock is held as long as the handle is open / process lives).
+    Raises AlreadyRunning if another process holds it.
+    """
+    config.ensure_dirs()
+    f = open(_lock_file(), "w")
+    try:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        f.close()
+        raise AlreadyRunning()
+    f.write(str(os.getpid()))
+    f.flush()
+    return f
+
+
+def release_lock(f) -> None:
+    if not f:
+        return
+    try:
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+    finally:
+        f.close()
 
 
 @dataclass

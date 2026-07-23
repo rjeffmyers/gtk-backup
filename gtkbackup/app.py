@@ -254,6 +254,14 @@ class BackupWindow(Adw.ApplicationWindow):
         if dev.uuid:
             db.set_config(self.conn, "last_target_uuid", dev.uuid)
 
+        # Guard against a concurrent timer/CLI run to the same destination.
+        try:
+            self._lock = engine.acquire_lock()
+        except engine.AlreadyRunning:
+            self.toasts.add_toast(Adw.Toast(
+                title="A backup is already running (timer or another window)."))
+            return
+
         self.active_prep = engine.prepare(self.conn, dev, trigger="gui")
         self.runner = engine.AsyncRunner()
         self._set_running(True)
@@ -277,6 +285,8 @@ class BackupWindow(Adw.ApplicationWindow):
 
     def _on_done(self, exit_code: int, stdout_text: str):
         status = engine.finalize(self.conn, self.active_prep, exit_code, stdout_text)
+        engine.release_lock(getattr(self, "_lock", None))
+        self._lock = None
         self.runner = None
         self._set_running(False)
         self.refresh_status()

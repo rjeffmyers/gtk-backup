@@ -52,12 +52,24 @@ def run_headless(trigger: str = "cli") -> int:
               f"{sizing.human(sc.free_bytes)}.", file=sys.stderr)
         return 1
 
-    prep = engine.prepare(conn, device, trigger=trigger)
+    # Refuse to run concurrently with another gtk-backup (GUI or timer).
+    try:
+        lock = engine.acquire_lock()
+    except engine.AlreadyRunning:
+        print("gtkbackup: another backup is already running; skipping.",
+              file=sys.stderr)
+        return 0
 
-    def _tick(p):
-        print(f"\r{p['pct']:3d}%  {p['rate']}  ETA {p['eta']}", end="", file=sys.stderr)
+    try:
+        prep = engine.prepare(conn, device, trigger=trigger)
 
-    status = engine.run_blocking(conn, prep, on_progress=_tick)
+        def _tick(p):
+            print(f"\r{p['pct']:3d}%  {p['rate']}  ETA {p['eta']}",
+                  end="", file=sys.stderr)
+
+        status = engine.run_blocking(conn, prep, on_progress=_tick)
+    finally:
+        engine.release_lock(lock)
     print(file=sys.stderr)  # newline after progress
     print(f"gtkbackup: {status} — target {device.name}, log {prep.log_path}")
     return 0 if status in ("success", "partial") else 1
