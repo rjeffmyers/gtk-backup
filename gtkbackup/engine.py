@@ -48,9 +48,8 @@ def prepare(conn, device: Device, trigger: str,
     config.ensure_dirs()
     exclude_file = config.ensure_excludes()
 
-    dest_root = Path(device.target) / config.DEST_SUBDIR
-    dest_home = Path(device.target) / config.HOME_SUBDIR
-    changed_dir = Path(device.target) / config.CHANGED_SUBDIR / _today()
+    dest_home = config.home_dest(device.target)
+    changed_dir = config.changed_dest(device.target, _today())
     dest_home.mkdir(parents=True, exist_ok=True)
     changed_dir.parent.mkdir(parents=True, exist_ok=True)
 

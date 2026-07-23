@@ -8,14 +8,36 @@ standard fallbacks) rather than via GLib for the same reason.
 from __future__ import annotations
 
 import os
+import socket
 from pathlib import Path
 
 APP_NAME = "gtkbackup"
 
-# Where the backup lands on the target drive, relative to the drive's mountpoint.
-DEST_SUBDIR = "backup"              # <mount>/backup/
-HOME_SUBDIR = "backup/home"        # <mount>/backup/home/
-CHANGED_SUBDIR = "backup/_changed"  # <mount>/backup/_changed/<date>/
+# On the target drive the backup lives under backup/<hostname>/ so several
+# machines can safely share one drive without overwriting each other's mirror
+# (backups stay per-machine; shared files live on rjmstore, not here).
+DEST_SUBDIR = "backup"
+
+
+def hostname() -> str:
+    """Short machine name, overridable for testing."""
+    name = os.environ.get("GTKBACKUP_HOST") or socket.gethostname()
+    return name.split(".")[0] or "unknown-host"
+
+
+def dest_root(target: str | os.PathLike) -> Path:
+    """<mount>/backup/<hostname>/ — this machine's private backup area."""
+    return Path(target) / DEST_SUBDIR / hostname()
+
+
+def home_dest(target: str | os.PathLike) -> Path:
+    """<mount>/backup/<hostname>/home/ — the always-current mirror."""
+    return dest_root(target) / "home"
+
+
+def changed_dest(target: str | os.PathLike, date: str) -> Path:
+    """<mount>/backup/<hostname>/_changed/<date>/ — safety net for casualties."""
+    return dest_root(target) / "_changed" / date
 
 
 def _xdg(env: str, default_rel: str) -> Path:

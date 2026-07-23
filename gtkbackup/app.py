@@ -137,7 +137,7 @@ class BackupWindow(Adw.ApplicationWindow):
     def _act_open_target(self, *_):
         dev = self._selected_device()
         if dev:
-            target = f"{dev.target}/{config.DEST_SUBDIR}"
+            target = str(config.dest_root(dev.target))
             Gio.AppInfo.launch_default_for_uri(GLib.filename_to_uri(target), None)
 
     def _act_about(self, *_):

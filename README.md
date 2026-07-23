@@ -7,10 +7,15 @@ but should run on any modern Linux with GTK4, libadwaita, and rsync.
 
 ## What it does
 
-- **Mirror + safety net.** `rsync --delete` keeps `<drive>/backup/home/` an
-  exact copy of your home folder. Anything about to be overwritten or deleted
-  is first moved into `<drive>/backup/_changed/<date>/`, so nothing is lost
-  silently — but you don't pay for full versioned snapshots.
+- **Mirror + safety net.** `rsync --delete` keeps
+  `<drive>/backup/<hostname>/home/` an exact copy of your home folder. Anything
+  about to be overwritten or deleted is first moved into
+  `<drive>/backup/<hostname>/_changed/<date>/`, so nothing is lost silently —
+  but you don't pay for full versioned snapshots.
+- **Per-machine, not synced.** The backup is namespaced by hostname, so several
+  machines can share one external drive without overwriting each other's mirror.
+  Backups stay independent per machine; cross-machine sharing is left to your
+  own remote storage (e.g. an sshfs mount), not this tool.
 - **Safe by construction.** `-x` (one-file-system) plus an explicit exclude of
   `~/rjmstore` means network/remote mounts inside your home are never pulled
   into the backup. Verified against a real home tree: zero paths under the
@@ -57,7 +62,7 @@ timer path is display-independent.
 | SQLite history     | `~/.local/share/gtkbackup/backups.db`  |
 | Exclude patterns   | `~/.config/gtkbackup/excludes.txt`     |
 | rsync logs         | `~/.local/state/gtkbackup/logs/`       |
-| On the drive       | `<mount>/backup/home/`, `<mount>/backup/_changed/<date>/` |
+| On the drive       | `<mount>/backup/<hostname>/home/`, `<mount>/backup/<hostname>/_changed/<date>/` |
 
 ## Usage
 
