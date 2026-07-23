@@ -47,10 +47,11 @@ cd gtk-backup
 ./install.sh
 ```
 
-`install.sh` installs any missing dependencies (via pacman), generates a
-launcher at `~/.local/bin/gtk-backup`, adds a **Home Backup** entry to the KDE
-menu, installs the systemd `--user` timer, and enables it. The app runs from
-this clone, so keep the checkout in place.
+`install.sh` installs any missing dependencies (via pacman), copies the app
+into `~/.local/share/gtkbackup`, generates a launcher at
+`~/.local/bin/gtk-backup`, adds a **Home Backup** entry to the KDE menu, and
+installs + enables the systemd `--user` timer. The clone can be deleted
+afterward.
 
 Flags: `--no-deps` (skip pacman), `--no-timer` (install but don't enable the
 timer), `--enable-linger` (also back up while logged out), `--help`.
