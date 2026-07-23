@@ -33,7 +33,8 @@ def build_argv(*, source: str, dest_home: str, changed_dir: str,
         "rsync",
         "-aHAX",              # archive + hardlinks + ACLs + xattrs
         "--numeric-ids",      # keep literal uid/gid
-        "--human-readable",
+        # NB: no --human-readable — it formats byte counts as "200.13G",
+        # which breaks both the progress and --stats digit parsers.
         "-x",                 # one-file-system: never descend into nested mounts
         f"--exclude-from={exclude_file}",
         "--delete",           # mirror: prune files gone from source ...
