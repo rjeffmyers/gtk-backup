@@ -1,0 +1,10 @@
+[Unit]
+Description=Run home-folder backup daily
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+RandomizedDelaySec=15min
+
+[Install]
+WantedBy=timers.target

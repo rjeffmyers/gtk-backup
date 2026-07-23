@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Home Backup
+Comment=Mirror your home folder to an external drive with rsync
+Exec=/home/jeff/.local/bin/gtk-backup
+Icon=drive-harddisk
+Terminal=false
+Categories=Utility;System;Archiving;
+Keywords=backup;rsync;mirror;

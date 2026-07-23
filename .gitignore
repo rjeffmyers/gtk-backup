@@ -1,0 +1,11 @@
+# Runtime state (created on the user's machine, not source)
+backups.db
+backups.db-wal
+backups.db-shm
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/

@@ -1,0 +1,17 @@
+# gtkbackup exclude patterns (rsync --exclude-from format).
+# Leading '/' anchors a pattern to the backup root (your home directory).
+# Edit freely; lines starting with '#' are ignored.
+
+# --- Nested / remote mounts (also blocked by rsync -x; kept explicit for safety) ---
+/rjmstore/
+/rjmstore
+
+# --- Optional: uncomment any of these later to shrink the backup ---
+# /.cache/
+# /.local/share/Trash/
+# /.thumbnails/
+# /.local/share/libvirt/images/
+# /.local/share/containers/
+# **/node_modules/
+# **/__pycache__/
+# **/.venv/
