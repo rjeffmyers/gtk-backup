@@ -1,12 +1,11 @@
 [Unit]
 Description=Daily home-folder backup (rsync mirror to external drive)
-Documentation=file:/home/jeff/.local/share/gtkbackup/README.md
 After=graphical-session.target
 
 [Service]
 Type=oneshot
 # The CLI exits 0 (no-op) when the saved target drive isn't mounted, so a
 # missing removable drive never counts as a failure.
-ExecStart=/home/jeff/.local/bin/gtk-backup --backup --trigger=timer
+ExecStart=%h/.local/bin/gtk-backup --backup --trigger=timer
 Nice=10
 IOSchedulingClass=idle

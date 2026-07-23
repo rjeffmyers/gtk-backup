@@ -37,7 +37,27 @@ but should run on any modern Linux with GTK4, libadwaita, and rsync.
 - PyGObject with GTK 4 and libadwaita (`Adw` 1) — only for the GUI; the
   `--backup` / `--list-devices` paths need neither GTK nor a display.
 
-On Arch/CachyOS: `sudo pacman -S rsync python-gobject gtk4 libadwaita`.
+On Arch/CachyOS: `sudo pacman -S rsync python-gobject gtk4 libadwaita udisks2`.
+
+## Install (CachyOS / Arch)
+
+```sh
+git clone https://github.com/rjeffmyers/gtk-backup
+cd gtk-backup
+./install.sh
+```
+
+`install.sh` installs any missing dependencies (via pacman), generates a
+launcher at `~/.local/bin/gtk-backup`, adds a **Home Backup** entry to the KDE
+menu, installs the systemd `--user` timer, and enables it. The app runs from
+this clone, so keep the checkout in place.
+
+Flags: `--no-deps` (skip pacman), `--no-timer` (install but don't enable the
+timer), `--enable-linger` (also back up while logged out), `--help`.
+
+The backup itself is per-machine — namespaced by hostname on the drive — so you
+can safely run the same drive across several machines without them clobbering
+each other.
 
 ## Layout
 
