@@ -78,6 +78,13 @@ class BackupWindow(Adw.ApplicationWindow):
         self.device_model = Gtk.StringList()
         self.device_row = Adw.ComboRow(title="Device", model=self.device_model)
         self.device_row.connect("notify::selected", self._on_device_changed)
+        eject_btn = Gtk.Button(icon_name="media-eject-symbolic")
+        eject_btn.set_valign(Gtk.Align.CENTER)
+        eject_btn.add_css_class("flat")
+        eject_btn.set_tooltip_text("Flush and safely remove this drive")
+        eject_btn.connect("clicked", self._on_eject_clicked)
+        self.eject_btn = eject_btn
+        self.device_row.add_suffix(eject_btn)
         g.add(self.device_row)
         self.space_row = Adw.ActionRow(title="Space check", subtitle="—")
         g.add(self.space_row)
@@ -143,7 +150,7 @@ class BackupWindow(Adw.ApplicationWindow):
     def _act_about(self, *_):
         about = Adw.AboutWindow(
             transient_for=self, application_name="Home Backup",
-            application_icon="drive-harddisk", version="0.1.0",
+            application_icon="drive-removable-media-usb-pendrive", version="0.1.0",
             developer_name="Jeff", comments="rsync mirror of your home folder "
             "to an external drive, with a dated safety net for changed files.")
         about.present()
@@ -300,6 +307,28 @@ class BackupWindow(Adw.ApplicationWindow):
         if self.runner:
             self.runner.cancel()
             # _on_done will fire from wait_check with a nonzero code; mark it.
+
+    def _on_eject_clicked(self, *_):
+        dev = self._selected_device()
+        if not dev:
+            return
+        if self.runner is not None:
+            self.toasts.add_toast(Adw.Toast(title="A backup is running — wait for it to finish."))
+            return
+        self.eject_btn.set_sensitive(False)
+
+        def worker():
+            ok, msg = engine.safe_remove(dev)
+            def done():
+                self.toasts.add_toast(Adw.Toast(title=msg))
+                self.eject_btn.set_sensitive(True)
+                self.refresh_devices()  # drive should now be gone from the list
+                return False
+            GLib.idle_add(done)
+
+        # udisksctl can block briefly; run off the main loop.
+        import threading
+        threading.Thread(target=worker, daemon=True).start()
 
 
 class BackupApp(Adw.Application):

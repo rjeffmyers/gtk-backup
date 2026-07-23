@@ -122,7 +122,8 @@ def _classify(exit_code: int) -> str:
 
 def finalize(conn, prep: Prepared, exit_code: int, stdout_text: str,
              error_summary: str | None = None) -> str:
-    """Parse stats, update the DB run row, cache source size. Returns status."""
+    """Parse stats, update the DB run row, cache source size, flush the drive.
+    Returns status."""
     status = _classify(exit_code)
     stats = rsync.parse_stats(stdout_text)
     duration = time.monotonic() - prep.started_monotonic
@@ -130,10 +131,58 @@ def finalize(conn, prep: Prepared, exit_code: int, stdout_text: str,
                   finished_at=datetime.now().isoformat(timespec="seconds"),
                   duration_secs=duration, status=status, exit_status=exit_code,
                   stats=stats, error_summary=error_summary)
-    if status in ("success", "partial") and stats.get("source_total_bytes"):
-        from . import sizing
-        sizing.store_source_bytes(conn, stats["source_total_bytes"])
+    if status in ("success", "partial"):
+        if stats.get("source_total_bytes"):
+            from . import sizing
+            sizing.store_source_bytes(conn, stats["source_total_bytes"])
+        # Flush buffered writes so the drive is safe to unplug even if the
+        # user pulls it right after the backup finishes.
+        flush_target(prep.dest_home)
     return status
+
+
+def flush_target(path) -> None:
+    """Flush the filesystem containing `path` to disk (sync -f, targeted).
+
+    Falls back to a global sync if `sync -f` isn't available. Best-effort:
+    failures are swallowed so a backup is never reported failed over a flush.
+    """
+    try:
+        subprocess.run(["sync", "-f", str(path)], check=False, timeout=180)
+    except Exception:
+        try:
+            subprocess.run(["sync"], check=False, timeout=180)
+        except Exception:
+            pass
+
+
+def safe_remove(device: Device) -> tuple[bool, str]:
+    """Flush, unmount, and power off a removable drive for safe unplugging.
+
+    Returns (ok, human_message). Uses udisksctl so no root is required for a
+    user-mounted removable drive.
+    """
+    subprocess.run(["sync"], check=False)
+    block = device.source           # e.g. /dev/sdc1
+    if not block.startswith("/dev/"):
+        return False, f"Don't know the block device for {device.name}."
+
+    umount = subprocess.run(["udisksctl", "unmount", "-b", block],
+                            capture_output=True, text=True)
+    if umount.returncode != 0:
+        msg = (umount.stderr or umount.stdout).strip()
+        return False, f"Couldn't unmount {device.name}: {msg}"
+
+    # Power off the whole disk (parent of the partition), if we can find it.
+    parent = subprocess.run(["lsblk", "-no", "pkname", block],
+                            capture_output=True, text=True).stdout.strip().splitlines()
+    if parent:
+        disk = f"/dev/{parent[0].strip()}"
+        off = subprocess.run(["udisksctl", "power-off", "-b", disk],
+                             capture_output=True, text=True)
+        if off.returncode == 0:
+            return True, f"{device.name} unmounted and powered off — safe to unplug."
+    return True, f"{device.name} unmounted — safe to unplug."
 
 
 def run_blocking(conn, prep: Prepared, on_progress=None) -> str:

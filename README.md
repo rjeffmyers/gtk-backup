@@ -23,6 +23,10 @@ but should run on any modern Linux with GTK4, libadwaita, and rsync.
 - **GUI:** pick a mounted drive (auto-detected, remembered by UUID), see the
   space check, last-backup status and history, and a live progress bar. Run a
   backup with one button; cancel mid-run.
+- **Safe to unplug.** Every backup ends with a targeted `sync -f` so buffered
+  writes are flushed before you can pull the drive. The GUI also has an eject
+  button (⏏) that flushes, unmounts, and powers the drive off via `udisksctl`
+  for a clean removal when you're in a hurry.
 - **Headless:** the same engine runs from a daily `systemd --user` timer, and
   no-ops cleanly when the drive isn't plugged in.
 

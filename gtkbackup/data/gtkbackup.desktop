@@ -1,9 +1,12 @@
 [Desktop Entry]
 Type=Application
 Name=Home Backup
+GenericName=Backup Tool
 Comment=Mirror your home folder to an external drive with rsync
 Exec=/home/jeff/.local/bin/gtk-backup
-Icon=drive-harddisk
+Icon=drive-removable-media-usb-pendrive
 Terminal=false
-Categories=Utility;System;Archiving;
-Keywords=backup;rsync;mirror;
+Categories=Utility;Archiving;
+Keywords=backup;rsync;mirror;drive;usb;
+StartupNotify=true
+StartupWMClass=org.jeff.GtkBackup
